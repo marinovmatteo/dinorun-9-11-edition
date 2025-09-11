@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Dino Run 9/11 Special Edition</title>
+<style>
+  body {
+    margin: 0;
+    background: #87ceeb;
+    font-family: sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  h1 {
+    margin-top: 20px;
+    margin-bottom: 10px;
+    font-size: 28px;
+    color: #333;
+  }
+
+  #scoreboard {
+    margin: 10px;
+    font-size: 20px;
+  }
+
+  #game {
+    position: relative;
+    width: 800px;
+    height: 300px; /* higher for jumps */
+    border: 2px solid #333;
+    background-color: #f0f0f0;
+    overflow: hidden;
+  }
+
+  /* Plane runner as uploaded PNG */
+  #plane {
+    position: absolute;
+    bottom: 50px;
+    left: 50px;
+    width: 60px;
+    height: 40px;
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: center;
+  }
+
+  /* Tower as CSS so it can stretch */
+  .tower {
+    position: absolute;
+    bottom: 0;
+    width: 40px;
+    background: #888;
+    border: 2px solid #555;
+    box-sizing: border-box;
+  }
+
+  .tower::before {
+    content: '';
+    display: block;
+    width: 100%;
+    height: 100%;
+    background-image: repeating-linear-gradient(
+      to top,
+      #ccc 0 10%,
+      transparent 10% 20%
+    );
+  }
+
+  /* Disclaimer */
+  #disclaimer {
+    margin-top: 15px;
+    font-size: 12px;
+    color: #555;
+    max-width: 800px;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+<h1>Dino Run 9/11 Special Edition</h1>
+<div id="scoreboard">
+  Score: <span id="score">0</span> | High Score: <span id="highscore">0</span>
+</div>
+<div id="game">
+  <div id="plane"></div>
+</div>
+
+<div id="disclaimer">
+  Disclaimer: This game is made purely for educational and entertainment purposes. We do not support terrorism or any acts of violence.
+</div>
+
+<script>
+const plane = document.getElementById('plane');
+const game = document.getElementById('game');
+const scoreDisplay = document.getElementById('score');
+const highScoreDisplay = document.getElementById('highscore');
+
+// CHANGE THIS TO YOUR PNG FILE NAME
+plane.style.backgroundImage = "url('plane.png')";
+
+let planeY = 50;
+let velocityY = 0;
+let gravity = 0.8;
+let jumpPower = 20;
+let isJumping = false;
+let towers = [];
+let score = 0;
+let highScore = parseInt(localStorage.getItem('highScore')) || 0;
+highScoreDisplay.textContent = highScore;
+
+// Create a tower
+function createTower() {
+  const tower = document.createElement('div');
+  tower.className = 'tower';
+  tower.style.height = (80 + Math.random() * 120) + 'px'; // taller towers
+  tower.style.left = game.offsetWidth + 'px';
+  game.appendChild(tower);
+  towers.push(tower);
+}
+
+// Update game frame
+function updateGame() {
+  // Plane physics
+  velocityY -= gravity;
+  planeY += velocityY;
+  if (planeY < 50) {
+    planeY = 50;
+    velocityY = 0;
+    isJumping = false;
+  }
+  plane.style.bottom = planeY + 'px';
+
+  // Move towers and check collision
+  towers.forEach((tower, index) => {
+    let towerX = parseInt(tower.style.left);
+    towerX -= 6;
+    tower.style.left = towerX + 'px';
+
+    if (towerX < 100 && towerX + tower.offsetWidth > 50 &&
+        planeY < parseInt(tower.style.height)) {
+      if (score > highScore) {
+        highScore = score;
+        localStorage.setItem('highScore', highScore);
+      }
+      alert("THEY HIT THE SECOND TOWER");
+      resetGame();
+    }
+
+    if (towerX + tower.offsetWidth < 0) {
+      game.removeChild(tower);
+      towers.splice(index, 1);
+      score++;
+      scoreDisplay.textContent = score;
+      // Update high score continuously
+      if(score > highScore){
+        highScore = score;
+        localStorage.setItem('highScore', highScore);
+        highScoreDisplay.textContent = highScore;
+      }
+    }
+  });
+
+  requestAnimationFrame(updateGame);
+}
+
+// Reset game
+function resetGame() {
+  towers.forEach(t => game.removeChild(t));
+  towers = [];
+  score = 0;
+  scoreDisplay.textContent = score;
+  planeY = 50;
+  plane.style.bottom = planeY + 'px';
+}
+
+// Jump on key press
+document.addEventListener('keydown', (e) => {
+  if ((e.code === 'Space' || e.code === 'ArrowUp') && !isJumping) {
+    isJumping = true;
+    velocityY = jumpPower;
+  }
+});
+
+// Generate towers periodically
+setInterval(createTower, 1500);
+
+updateGame();
+</script>
+</body>
+</html>
